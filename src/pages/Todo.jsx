@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Menu, CheckCircle, Archive } from "lucide-react";
+import Sidebar from "../components/Sidebar.jsx";
+import AddTodoForm from "../components/AddTodo.jsx";
+import TodoItem from "../components/TodoItem.jsx";
 import { apiCall } from "../utils/api";
 
 const Todo = () => {
   const [todos, setTodos] = useState([]);
-  const [inputValue, setInputValue] = useState("");
-  const [editingId, setEditingId] = useState(null);
-  const [editValue, setEditValue] = useState("");
   const [loading, setLoading] = useState(true);
+  const [fetchingTodos, setFetchingTodos] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeFilter, setActiveFilter] = useState("all");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const navigate = useNavigate();
@@ -18,7 +22,7 @@ const Todo = () => {
         const res = await apiCall("get", "/auth/login");
         if (res.success) {
           setIsAuthenticated(true);
-          fetchTodos();
+          fetchTodosByFilter("all");
         } else {
           navigate("/");
         }
@@ -30,15 +34,38 @@ const Todo = () => {
     checkAuth();
   }, [navigate]);
 
-  const fetchTodos = async () => {
+  const fetchTodosByFilter = async (filter) => {
+    setFetchingTodos(true);
     try {
-      const response = await apiCall("get", "/todos");
+      let endpoint = "/todos";
+      switch (filter) {
+        case "active":
+          endpoint = "/todos/active";
+          break;
+        case "completed":
+          endpoint = "/todos/completed";
+          break;
+        case "trash":
+          endpoint = "/todos/deleted";
+          break;
+        default:
+          endpoint = "/todos";
+      }
+
+      const response = await apiCall("get", endpoint);
       setTodos(response.data?.todos || []);
     } catch (error) {
       console.error("Error fetching todos:", error);
+      setTodos([]);
     } finally {
+      setFetchingTodos(false);
       setLoading(false);
     }
+  };
+
+  const handleFilterChange = (filter) => {
+    setActiveFilter(filter);
+    fetchTodosByFilter(filter);
   };
 
   const handleLogout = async () => {
@@ -54,61 +81,20 @@ const Todo = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!inputValue.trim()) return;
-
+  const handleAddTodo = async (task) => {
     try {
       const response = await apiCall("post", "/todos", {
-        data: {
-          task: inputValue.trim(),
-        },
+        data: { task },
       });
       if (response.data?.todo) {
-        setTodos([...todos, response.data.todo]);
-        setInputValue("");
+        fetchTodosByFilter(activeFilter);
       }
     } catch (error) {
       console.error("Error adding todo:", error);
     }
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await apiCall("delete", `/todos/${id}`);
-      setTodos(todos.filter((todo) => todo._id !== id));
-    } catch (error) {
-      console.error("Error deleting todo:", error);
-    }
-  };
-
-  const startEditing = (todo) => {
-    setEditingId(todo._id);
-    setEditValue(todo.task);
-  };
-
-  const handleEdit = async (id) => {
-    if (!editValue.trim()) return;
-
-    try {
-      const response = await apiCall("put", `/todos/${id}`, {
-        data: {
-          task: editValue,
-        },
-      });
-      if (response.data?.todo) {
-        setTodos(
-          todos.map((todo) => (todo._id === id ? response.data.todo : todo))
-        );
-        setEditingId(null);
-        setEditValue("");
-      }
-    } catch (error) {
-      console.error("Error editing todo:", error);
-    }
-  };
-
-  const toggleComplete = async (id) => {
+  const handleToggleComplete = async (id) => {
     const todo = todos.find((t) => t._id === id);
     if (!todo) return;
 
@@ -120,147 +106,156 @@ const Todo = () => {
         },
       });
       if (response.data?.todo) {
-        setTodos(todos.map((t) => (t._id === id ? response.data.todo : t)));
+        fetchTodosByFilter(activeFilter);
       }
     } catch (error) {
       console.error("Error toggling todo:", error);
     }
   };
 
-  if (loading)
+  const handleEditTodo = async (id, newTask) => {
+    if (!newTask.trim()) return;
+
+    const todo = todos.find((t) => t._id === id);
+    if (!todo) return;
+
+    try {
+      const response = await apiCall("put", `/todos/${id}`, {
+        data: {
+          task: newTask,
+          completed: todo.completed,
+        },
+      });
+      if (response.data?.todo) {
+        fetchTodosByFilter(activeFilter);
+      }
+    } catch (error) {
+      console.error("Error editing todo:", error);
+    }
+  };
+
+  const handleDeleteTodo = async (id) => {
+    try {
+      if (activeFilter === "trash") {
+        await apiCall("delete", `/todos/${id}/permanent`);
+      } else {
+        await apiCall("delete", `/todos/${id}`);
+      }
+      fetchTodosByFilter(activeFilter);
+    } catch (error) {
+      console.error("Error deleting todo:", error);
+    }
+  };
+
+  const handleRestoreTodo = async (id) => {
+    try {
+      await apiCall("patch", `/todos/${id}/restore`);
+      fetchTodosByFilter(activeFilter);
+    } catch (error) {
+      console.error("Error restoring todo:", error);
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-linear-to-r from-pink-100 via-pink-200 to-pink-300">
-        <nav className="bg-white border-gray-200 shadow-sm">
-          <div className="max-w-6xl flex flex-wrap items-center justify-between mx-auto p-4">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-pink-600">TodoList</span>
-            </div>
-          </div>
-        </nav>
-        <div className="flex justify-center items-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
+      <div className="min-h-screen bg-linear-to-br from-pink-50 via-purple-50 to-pink-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-pink-200 border-t-pink-500 mx-auto mb-4"></div>
+          <p className="text-pink-600 font-medium">Loading your tasks...</p>
         </div>
       </div>
     );
+  }
 
   return (
-    <div className="min-h-screen pb-10 bg-linear-to-r from-pink-100 via-pink-200 to-pink-300">
-      <nav className="bg-white border-gray-200 shadow-sm">
-        <div className="max-w-6xl flex flex-wrap items-center justify-between mx-auto p-4">
-          <div className="flex items-center gap-2">
-            <img
-              src="src/assets/logo.png"
-              alt="Logo"
-              className="max-h-10 object-contain"
-            />
+    <div className="min-h-screen bg-linear-to-br from-pink-50 via-purple-50 to-pink-100">
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        activeFilter={activeFilter}
+        setActiveFilter={handleFilterChange}
+        onLogout={handleLogout}
+      />
+
+      <div className="lg:ml-64 min-h-screen">
+        <header className="lg:hidden bg-white border-b border-pink-200 px-4 py-4 shadow-sm sticky top-0 z-30">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 text-gray-600 hover:bg-pink-50 rounded-lg"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <div className="flex items-center gap-2">
+              <img src="/logo.png" alt="Logo" className="h-8 object-contain" />
+            </div>
+            <div className="w-10"></div>
+          </div>
+        </header>
+
+        <main className="max-w-4xl mx-auto px-4 py-8 lg:py-12">
+          <div className="mb-8">
+            <h1 className="text-3xl lg:text-4xl font-bold text-gray-800 mb-2">
+              {activeFilter === "trash"
+                ? "Trash"
+                : activeFilter === "completed"
+                ? "Completed Tasks"
+                : activeFilter === "active"
+                ? "Active Tasks"
+                : "My Tasks"}
+            </h1>
+            <p className="text-gray-600">
+              {activeFilter === "trash"
+                ? "Deleted tasks are stored here"
+                : `You have ${todos.length} ${
+                    activeFilter === "all" ? "" : activeFilter
+                  } task${todos.length !== 1 ? "s" : ""}`}
+            </p>
           </div>
 
-          {isAuthenticated && (
-            <div>
-              <button
-                onClick={handleLogout}
-                className="bg-pink-500 flex items-center text-sm text-white px-4 py-2 gap-2 rounded-lg hover:bg-pink-600"
-              >
-                Logout
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-4 h-5"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    fill="currentColor"
-                    d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h6q.425 0 .713.288T12 4t-.288.713T11 5H5v14h6q.425 0 .713.288T12 20t-.288.713T11 21zm12.175-8H10q-.425 0-.712-.288T9 12t.288-.712T10 11h7.175L15.3 9.125q-.275-.275-.275-.675t.275-.7t.7-.313t.725.288L20.3 11.3q.3.3.3.7t-.3.7l-3.575 3.575q-.3.3-.712.288t-.713-.313q-.275-.3-.262-.712t.287-.688z"
-                  />
-                </svg>
-              </button>
+          {activeFilter !== "trash" && <AddTodoForm onAdd={handleAddTodo} />}
+
+          {fetchingTodos ? (
+            <div className="flex justify-center items-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-pink-200 border-t-pink-500"></div>
             </div>
-          )}
-        </div>
-      </nav>
-
-      <div className="max-w-2xl mt-10 mx-auto px-4">
-        <h1 className="text-4xl font-serif text-pink-600 text-center mb-8">
-          My Todo List
-        </h1>
-
-        <form onSubmit={handleSubmit} className="flex gap-2 mb-8">
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            className="flex-1 px-4 py-2 rounded-lg border border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-300 bg-white"
-            placeholder="Add new task..."
-          />
-          <button
-            type="submit"
-            className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 flex items-center gap-2"
-          >
-            Add Task
-          </button>
-        </form>
-
-        <div className="space-y-3">
-          {todos.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              No todos yet! Add some tasks to get started.
-            </div>
-          )}
-
-          {todos.map((todo) => (
-            <div
-              key={todo._id}
-              className="bg-white p-4 rounded-lg shadow-sm border border-pink-100 flex flex-wrap items-center gap-3 sm:flex-nowrap"
-            >
-              <input
-                type="checkbox"
-                checked={todo.completed}
-                onChange={() => toggleComplete(todo._id)}
-                className="w-5 h-5 text-pink-500 rounded border-pink-300"
-              />
-              {editingId === todo._id ? (
-                <input
-                  type="text"
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                  className="flex-1 px-2 py-1 border border-pink-300 rounded"
-                />
+          ) : (
+            <div className="space-y-3">
+              {todos.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="w-24 h-24 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    {activeFilter === "trash" ? (
+                      <Archive className="w-12 h-12 text-pink-400" />
+                    ) : (
+                      <CheckCircle className="w-12 h-12 text-pink-400" />
+                    )}
+                  </div>
+                  <p className="text-gray-500 text-lg">
+                    {activeFilter === "trash"
+                      ? "No deleted tasks"
+                      : activeFilter === "completed"
+                      ? "No completed tasks yet"
+                      : activeFilter === "active"
+                      ? "No active tasks"
+                      : "No tasks yet! Add one to get started."}
+                  </p>
+                </div>
               ) : (
-                <span
-                  className={`flex-1 wrap-break-word ${
-                    todo.completed
-                      ? "line-through text-gray-400"
-                      : "text-gray-700"
-                  }`}
-                >
-                  {todo.task}
-                </span>
+                todos.map((todo) => (
+                  <TodoItem
+                    key={todo._id}
+                    todo={todo}
+                    onToggle={handleToggleComplete}
+                    onEdit={handleEditTodo}
+                    onDelete={handleDeleteTodo}
+                    onRestore={handleRestoreTodo}
+                    isTrash={activeFilter === "trash"}
+                  />
+                ))
               )}
-              <div className="flex gap-2">
-                {editingId === todo._id ? (
-                  <button
-                    onClick={() => handleEdit(todo._id)}
-                    className="p-2 text-pink-500 hover:bg-pink-50 rounded-lg"
-                  >
-                    Save
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => startEditing(todo)}
-                    className="p-2 text-pink-500 hover:bg-pink-50 rounded-lg"
-                  >
-                    Edit
-                  </button>
-                )}
-                <button
-                  onClick={() => handleDelete(todo._id)}
-                  className="p-2 text-pink-500 hover:bg-pink-50 rounded-lg"
-                >
-                  Delete
-                </button>
-              </div>
             </div>
-          ))}
-        </div>
+          )}
+        </main>
       </div>
     </div>
   );

@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { apiCall } from "../utils/api";
 
 const Login = () => {
-  const navigate = useNavigate();
-
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -14,6 +13,23 @@ const Login = () => {
     general: "",
   });
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await apiCall("get", "/auth/login");
+        if (res.success) {
+          setIsAuthenticated(true);
+          navigate("/todo");
+        }
+      } catch (error) {
+        console.error("Error checking authentication:", error);
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
 
   const validateEmail = (email) => {
     const emailRegex = /^[a-zA-Z0-9_\-\.]+@[a-z]+\.[a-z]{2,3}$/;
@@ -67,16 +83,12 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-linear-to-r from-pink-100 via-pink-200 to-pink-300">
       <div className="w-full max-w-md bg-white rounded-xl shadow-xl px-7 mx-7 static">
         <img
-          src="src/assets/bow2.png"
+          src="/bow.png"
           className="h-44 relative bottom-3.5 right-10"
           alt="Bow"
         />
         <div className="flex justify-center relative bottom-28">
-          <img
-            src="src/assets/logo.png"
-            alt="Logo"
-            className="max-h-20 object-contain"
-          />
+          <img src="/logo.png" alt="Logo" className="max-h-20 object-contain" />
         </div>
         <p className="text-center text-gray-500 relative bottom-28">
           Please log in to your account
