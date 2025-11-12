@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, CheckCircle, Archive } from "lucide-react";
 import Sidebar from "../components/Sidebar.jsx";
@@ -8,7 +8,7 @@ import { apiCall } from "../utils/api";
 
 const Todo = () => {
   const [todos, setTodos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
   const [fetchingTodos, setFetchingTodos] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
@@ -59,7 +59,7 @@ const Todo = () => {
       setTodos([]);
     } finally {
       setFetchingTodos(false);
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -156,16 +156,16 @@ const Todo = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-linear-to-br from-pink-50 via-purple-50 to-pink-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-pink-200 border-t-pink-500 mx-auto mb-4"></div>
-          <p className="text-pink-600 font-medium">Loading your tasks...</p>
-        </div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="min-h-screen bg-linear-to-br from-pink-50 via-purple-50 to-pink-100 flex items-center justify-center">
+  //       <div className="text-center">
+  //         <div className="animate-spin rounded-full h-16 w-16 border-4 border-pink-200 border-t-pink-500 mx-auto mb-4"></div>
+  //         <p className="text-pink-600 font-medium">Loading your tasks...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-linear-to-br from-pink-50 via-purple-50 to-pink-100">
