@@ -12,27 +12,27 @@ const Todo = () => {
   const [fetchingTodos, setFetchingTodos] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await apiCall("get", "/auth/login");
-        if (res.success) {
-          setIsAuthenticated(true);
-          fetchTodosByFilter("all");
-        } else {
-          navigate("/");
-        }
-      } catch (error) {
-        navigate("/");
-      }
-    };
+  // useEffect(() => {
+  //   const checkAuth = async () => {
+  //     try {
+  //       const res = await apiCall("get", "/auth/login");
+  //       if (res.success) {
+  //         setIsAuthenticated(true);
+  //         fetchTodosByFilter("all");
+  //       } else {
+  //         navigate("/");
+  //       }
+  //     } catch (error) {
+  //       navigate("/");
+  //     }
+  //   };
 
-    checkAuth();
-  }, [navigate]);
+  //   checkAuth();
+  // }, [navigate]);
 
   const fetchTodosByFilter = async (filter) => {
     setFetchingTodos(true);

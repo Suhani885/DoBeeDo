@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { apiCall } from "../utils/api";
 
 const Login = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -15,21 +15,21 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await apiCall("get", "/auth/login");
-        if (res.success) {
-          setIsAuthenticated(true);
-          navigate("/todo");
-        }
-      } catch (error) {
-        console.error("Error checking authentication:", error);
-      }
-    };
+  // useEffect(() => {
+  //   const checkAuth = async () => {
+  //     try {
+  //       const res = await apiCall("get", "/auth/login");
+  //       if (res.success) {
+  //         setIsAuthenticated(true);
+  //         navigate("/todo");
+  //       }
+  //     } catch (error) {
+  //       console.error("Error checking authentication:", error);
+  //     }
+  //   };
 
-    checkAuth();
-  }, [navigate]);
+  //   checkAuth();
+  // }, [navigate]);
 
   const validateEmail = (email) => {
     const emailRegex = /^[a-zA-Z0-9_\-\.]+@[a-z]+\.[a-z]{2,3}$/;

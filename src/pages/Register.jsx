@@ -4,7 +4,7 @@ import { apiCall } from "../utils/api";
 
 const Register = () => {
   const [username, setUsername] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -20,21 +20,21 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await apiCall("get", "/auth/login");
-        if (res.success) {
-          setIsAuthenticated(true);
-          navigate("/todo");
-        }
-      } catch (error) {
-        console.error("Error checking authentication:", error);
-      }
-    };
+  // useEffect(() => {
+  //   const checkAuth = async () => {
+  //     try {
+  //       const res = await apiCall("get", "/auth/login");
+  //       if (res.success) {
+  //         setIsAuthenticated(true);
+  //         navigate("/todo");
+  //       }
+  //     } catch (error) {
+  //       console.error("Error checking authentication:", error);
+  //     }
+  //   };
 
-    checkAuth();
-  }, [navigate]);
+  //   checkAuth();
+  // }, [navigate]);
 
   const validateEmail = (email) => {
     const emailRegex = /^[a-zA-Z0-9_\-\.]+@[a-z]+\.[a-z]{2,3}$/;
