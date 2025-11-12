@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const apiClient = axios.create({
-  baseURL: "http://127.0.0.1:4000",
+  baseURL: "https://dobeedo-backend.onrender.com/",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
